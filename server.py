@@ -1,7 +1,8 @@
-"""AI usage: serves Claude token use and quota state, and its own page to look at it.
+"""Jarri AI-usage service: serves Claude token use and quota state to Jarri Workspace.
 
-  GET /          -> the page in ui/index.html
-  GET /snapshot  -> {now, fiveHourStart, sevenDayStart, tokens, limits}
+Backend only. Jarri's AI usage panel is a client of this service.
+
+  GET /snapshot -> {now, fiveHourStart, sevenDayStart, tokens, limits}
 
 tokens come from ~/.local/bin/ai-usage-tokens (summarises Claude Code transcripts).
 limits come from ~/.local/state/ai-usage/latest.json, written by the Claude Code mod.
@@ -21,7 +22,6 @@ PORT = int(os.environ.get("JARRI_AI_USAGE_PORT", "8783"))
 HOME = os.path.expanduser("~")
 TOKENS_SCRIPT = os.path.join(HOME, ".local/bin/ai-usage-tokens")
 LIMITS_FILE = os.path.join(HOME, ".local/state/ai-usage/latest.json")
-UI_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui", "index.html")
 HOUR_MS = 3_600_000
 FIVE_HOURS_MS = 5 * HOUR_MS
 SEVEN_DAYS_MS = 7 * 24 * HOUR_MS
@@ -98,26 +98,14 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(403, {"error": "forbidden origin"})
         self._send(204)
 
-    def _send_page(self):
-        with open(UI_FILE, "rb") as file:
-            raw = file.read()
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(raw)))
-        self.end_headers()
-        self.wfile.write(raw)
-
     def do_GET(self):
         if not self._allowed():
             return self._send(403, {"error": "forbidden origin"})
-        path = urlparse(self.path).path
-        if path in ("/", "/index.html"):
-            return self._send_page()
-        if path != "/snapshot":
+        if urlparse(self.path).path != "/snapshot":
             return self._send(404, {"error": "not found"})
         try:
             self._send(200, snapshot())
-        except Exception as error:  # report the failure to the page
+        except Exception as error:  # report the failure to the panel
             self._send(500, {"error": str(error)})
 
 
