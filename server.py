@@ -1,6 +1,6 @@
-"""Jarri AI-usage service: serves Claude token use and quota state to Jarri Workspace.
+"""AI usage: serves Claude token use and quota state over localhost HTTP.
 
-Backend only. Jarri's AI usage panel is a client of this service.
+Runs on its own with `python3 server.py`. Any client can use it, a panel in Jarri is optional.
 
   GET /snapshot -> {now, fiveHourStart, sevenDayStart, tokens, limits}
 
@@ -111,7 +111,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     server = ThreadingHTTPServer((HOST, PORT), Handler)
-    print(f"jarri ai-usage service on http://{HOST}:{PORT}", file=sys.stderr)
+    print(f"ai-usage service on http://{HOST}:{PORT}", file=sys.stderr)
     server.serve_forever()
 
 
